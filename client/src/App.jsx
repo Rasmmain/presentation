@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import PresentationList from "./components/PresentationList";
-import Presentation from "./components/Presentation";
 import { SocketProvider } from "./contexts/SocketContext";
+import Presentation from "./components/Presentation";
 
 const App = () => {
   const [nickname, setNickname] = useState("");
@@ -42,8 +42,15 @@ const App = () => {
     <SocketProvider>
       <Router>
         <Routes>
-          <Route path="/" element={<PresentationList />} />
-          <Route path="/presentation/:id" element={<Presentation />} />
+          <Route
+            exact
+            path="/"
+            element={<PresentationList nickname={nickname} />}
+          />
+          <Route
+            path="/presentation/:id"
+            element={<Presentation nickname={nickname} />}
+          />
         </Routes>
       </Router>
     </SocketProvider>

@@ -1,15 +1,38 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import io from "socket.io-client";
 
-export const useWebSocket = () => {
-  const [socket, setSocket] = useState(null);
+const useWebSocket = (url) => {
+  const socket = useRef(null);
 
   useEffect(() => {
-    const newSocket = io("http://localhost:3000");
-    setSocket(newSocket);
+    socket.current = io(url);
 
-    return () => newSocket.close();
+    return () => {
+      if (socket.current) {
+        socket.current.disconnect();
+      }
+    };
+  }, [url]);
+
+  const emit = useCallback((eventName, data) => {
+    if (socket.current) {
+      socket.current.emit(eventName, data);
+    }
   }, []);
 
-  return socket;
+  const on = useCallback((eventName, callback) => {
+    if (socket.current) {
+      socket.current.on(eventName, callback);
+    }
+  }, []);
+
+  const off = useCallback((eventName, callback) => {
+    if (socket.current) {
+      socket.current.off(eventName, callback);
+    }
+  }, []);
+
+  return { emit, on, off };
 };
+
+export default useWebSocket;

@@ -1,29 +1,33 @@
-import { useEffect, useRef } from "react";
+import TextBlock from "./TextBlock";
 
-const Slide = ({ slide }) => {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    if (canvasRef.current) {
-      const context = canvasRef.current.getContext("2d");
-      drawContent(context, slide);
-    }
-  }, [slide]);
-
-  const drawContent = (context, slide) => {
-    context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-    slide?.elements.forEach((element) => {
-      console.log(element);
-    });
+const Slide = ({ slide, userRole, onUpdateSlide }) => {
+  const handleTextBlockUpdate = (blockId, newContent) => {
+    const updatedContent = slide.content.map((block) =>
+      block.id === blockId ? { ...block, text: newContent } : block
+    );
+    onUpdateSlide(slide.id, updatedContent);
   };
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="border w-full h-full"
-      width="800"
-      height="600"
-    ></canvas>
+    <div className="w-full h-full bg-white shadow-lg">
+      {slide?.content.map((block) => {
+        switch (block.type) {
+          case "text":
+            return (
+              <TextBlock
+                key={block.id}
+                id={block.id}
+                content={block.text}
+                isEditable={userRole === "creator" || userRole === "editor"}
+                onUpdate={handleTextBlockUpdate}
+              />
+            );
+
+          default:
+            return null;
+        }
+      })}
+    </div>
   );
 };
 

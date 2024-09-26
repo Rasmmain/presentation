@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 
-// Get all presentations
 router.get("/", async (req, res) => {
   try {
     const [rows] = await db.query("SELECT * FROM presentations");
@@ -12,7 +11,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Get a specific presentation
 router.get("/:id", async (req, res) => {
   try {
     const [rows] = await db.query("SELECT * FROM presentations WHERE id = ?", [
@@ -23,7 +21,6 @@ router.get("/:id", async (req, res) => {
     }
     const presentation = rows[0];
 
-    // Fetch slides for the presentation
     const [slides] = await db.query(
       "SELECT * FROM slides WHERE presentation_id = ? ORDER BY slide_order",
       [req.params.id]
@@ -39,7 +36,6 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// Create a new presentation
 router.post("/", async (req, res) => {
   const { title, creator } = req.body;
   try {
@@ -53,7 +49,6 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Update a presentation
 router.put("/:id", async (req, res) => {
   const { title } = req.body;
   try {
@@ -67,7 +62,6 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// Delete a presentation
 router.delete("/:id", async (req, res) => {
   try {
     await db.query("DELETE FROM presentations WHERE id = ?", [req.params.id]);

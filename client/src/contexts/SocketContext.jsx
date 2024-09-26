@@ -1,23 +1,20 @@
-import { createContext, useState, useEffect } from "react";
-import { useWebSocket } from "../hook/useWebSocket";
+import { createContext, useContext } from "react";
+import useWebSocket from "../hook/useWebSocket";
 
-export const SocketContext = createContext();
+const SocketContext = createContext(null);
 
 export const SocketProvider = ({ children }) => {
-  const socket = useWebSocket();
-  const [users, setUsers] = useState([]);
-
-  useEffect(() => {
-    if (socket) {
-      socket.on("users-update", (updatedUsers) => {
-        setUsers(updatedUsers);
-      });
-    }
-  }, [socket]);
+  const socket = useWebSocket("http://localhost:5000");
 
   return (
-    <SocketContext.Provider value={{ socket, users }}>
-      {children}
-    </SocketContext.Provider>
+    <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>
   );
+};
+
+export const useSocket = () => {
+  const context = useContext(SocketContext);
+  if (context === null) {
+    throw new Error("useSocket must be used within a SocketProvider");
+  }
+  return context;
 };

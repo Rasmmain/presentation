@@ -1,34 +1,108 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
+import { useSocket } from "../contexts/SocketContext";
+import Modal from "./Modal";
 
-const PresentationList = () => {
+const PresentationList = ({ nickname }) => {
   const [presentations, setPresentations] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [title, setTitle] = useState("");
 
   useEffect(() => {
-    fetch("/api/presentations")
-      .then((res) => res.json())
-      .then((data) => setPresentations(data));
+    const fetchPresentations = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/api/presentations"
+        );
+        setPresentations(response.data);
+      } catch (error) {
+        console.log(error);
+
+        // setPresentations(response.data);
+      }
+    };
+
+    fetchPresentations();
   }, []);
+
+  const socket = useSocket();
+
+  const handleSlideUpdate = () => {
+    console.log("handleSlideUpdate");
+  };
+
+  const handleUserJoined = () => {
+    console.log("handleUserJoined");
+  };
+
+  useEffect(() => {
+    socket.on("slideUpdate", handleSlideUpdate);
+    socket.on("userJoined", handleUserJoined);
+
+    return () => {
+      socket.off("slideUpdate", handleSlideUpdate);
+      socket.off("userJoined", handleUserJoined);
+    };
+  }, [socket]);
+
+  const createPresentation = () => {
+    fetch("http://localhost:5000/api/presentations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ creator: nickname, title }),
+    })
+      .then((response) => response.json())
+      .then((newPresentation) => {
+        setPresentations((prevPresentations) => [
+          ...prevPresentations,
+          newPresentation,
+        ]);
+        setShowModal(false);
+        setTitle("");
+      });
+  };
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Presentations</h1>
-      <div className="grid grid-cols-3 gap-4">
-        {presentations.map((presentation) => (
-          <Link
-            key={presentation.id}
-            to={`/presentation/${presentation.id}`}
-            className="border rounded p-4 shadow hover:bg-gray-50"
-          >
-            <img
-              src={presentation.thumbnailUrl}
-              alt={presentation.name}
-              className="w-full h-40 object-cover"
-            />
-            <h2 className="text-lg font-semibold mt-2">{presentation.name}</h2>
-          </Link>
-        ))}
-      </div>
+      <h1 className="text-3xl mb-4">Presentations</h1>
+      <button
+        onClick={() => setShowModal(true)}
+        className="mb-4 bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+      >
+        Create New Presentation
+      </button>
+
+      {/* Modal */}
+      {showModal && (
+        <Modal
+          title={title}
+          setTitle={setTitle}
+          createPresentation={createPresentation}
+          closeModal={() => setShowModal(false)}
+        />
+      )}
+
+      <ul className="space-y-2">
+        {presentations.map((presentation) => {
+          console.log(presentation);
+
+          return (
+            <li key={presentation.id} className="bg-white p-4 rounded shadow">
+              <Link
+                to={`/presentation/${presentation.id}`}
+                className="text-blue-500 hover:underline"
+              >
+                {presentation.title ||
+                  `Untitled Presentation ${presentation.id}`}
+              </Link>
+              <p className="text-sm text-gray-500">
+                Created by: {presentation.creator}
+              </p>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 };
