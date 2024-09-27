@@ -85,8 +85,6 @@ const PresentationList = ({ nickname }) => {
 
       <ul className="space-y-2">
         {presentations.map((presentation) => {
-          console.log(presentation);
-
           return (
             <li key={presentation.id} className="bg-white p-4 rounded shadow">
               <Link

@@ -1,74 +1,71 @@
 const express = require("express");
+const Presentation = require("../models/Presentation.js");
 const router = express.Router();
-const db = require("../db");
 
+// Get all presentations
 router.get("/", async (req, res) => {
-  try {
-    const [rows] = await db.query("SELECT * FROM presentations");
-    res.json(rows);
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching presentations", error });
-  }
+  const presentations = await Presentation.findAll();
+  res.json(presentations);
 });
 
+// Get a specific presentation by ID
 router.get("/:id", async (req, res) => {
-  try {
-    const [rows] = await db.query("SELECT * FROM presentations WHERE id = ?", [
-      req.params.id,
-    ]);
-    if (rows.length === 0) {
-      return res.status(404).json({ message: "Presentation not found" });
-    }
-    const presentation = rows[0];
-
-    const [slides] = await db.query(
-      "SELECT * FROM slides WHERE presentation_id = ? ORDER BY slide_order",
-      [req.params.id]
-    );
-    presentation.slides = slides.map((slide) => ({
-      ...slide,
-      content: JSON.parse(slide.content),
-    }));
-
-    res.json(presentation);
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching presentation", error });
+  const presentation = await Presentation.findById(req.params.id);
+  if (!presentation) {
+    return res.status(404).json({ error: "Presentation not found" });
   }
+  res.json(presentation);
 });
 
+// Create a new presentation
 router.post("/", async (req, res) => {
   const { title, creator } = req.body;
+  const newPresentation = await Presentation.create(title, creator);
+  res.json(newPresentation);
+});
+
+// Add a new slide to a presentation
+router.post("/:id/slides", async (req, res) => {
+  const presentation = await Presentation.findById(req.params.id);
+  if (!presentation) {
+    return res.status(404).json({ error: "Presentation not found" });
+  }
+  const { content } = req.body; 
+  const newSlide = await presentation.addSlide(content);
+  res.json(newSlide);
+});
+
+router.put("/:id/slides/:slideId", async (req, res) => {
   try {
-    const [result] = await db.query(
-      "INSERT INTO presentations (title, creator) VALUES (?, ?)",
-      [title, creator]
-    );
-    res.status(201).json({ id: result.insertId, title, creator });
+    console.log("Receivedsss PUT request to update slide:", req.params.slideId);
+    console.log("Receivedssss content:", req.body.content);
+    const slideId = parseInt(req.params.slideId, 10);
+    console.log("slideId  " + slideId);
+
+    const presentation = await Presentation.findById(req.params.id);
+    if (!presentation) {
+      return res.status(404).json({ error: "Presentation not found" });
+    }
+
+    const { content } = req.body;
+    console.log("Contet  " + { ...content });
+    await presentation.updateSlide(req.params.slideId, content);
+
+    res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ message: "Error creating presentation", error });
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
-router.put("/:id", async (req, res) => {
-  const { title } = req.body;
-  try {
-    await db.query("UPDATE presentations SET title = ? WHERE id = ?", [
-      title,
-      req.params.id,
-    ]);
-    res.json({ message: "Presentation updated successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Error updating presentation", error });
+// Remove a slide
+router.delete("/:id/slides/:slideId", async (req, res) => {
+  const presentation = await Presentation.findById(req.params.id);
+  if (!presentation) {
+    return res.status(404).json({ error: "Presentation not found" });
   }
-});
-
-router.delete("/:id", async (req, res) => {
-  try {
-    await db.query("DELETE FROM presentations WHERE id = ?", [req.params.id]);
-    res.json({ message: "Presentation deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Error deleting presentation", error });
-  }
+  await presentation.removeSlide(req.params.slideId);
+  res.json({ success: true });
 });
 
 module.exports = router;

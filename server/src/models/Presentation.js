@@ -51,6 +51,18 @@ class Presentation {
     }));
   }
 
+  async updateSlide(slideId, content) {
+    await db.query(
+      "UPDATE slides SET content = ? WHERE id = ? AND presentation_id = ?",
+      [JSON.stringify(content), slideId, this.id]
+    );
+
+    const slideIndex = this.slides.findIndex((slide) => slide.id === slideId);
+    if (slideIndex !== -1) {
+      this.slides[slideIndex].content = content;
+    }
+  }
+
   async addSlide(content) {
     const order = this.slides.length;
     const [result] = await db.query(

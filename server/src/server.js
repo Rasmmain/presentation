@@ -20,6 +20,12 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
+
+app.use((req, res, next) => {
+  console.log(`Incoming request: ${req.method} ${req.url}`);
+  next();
+});
+
 app.use("/api/presentations", presentationsRouter);
 app.use("/api/users", usersRouter);
 
